@@ -1,0 +1,11 @@
+# -*- coding: utf-8 -*-
+import scrapy
+
+
+class ZolSpider(scrapy.Spider):
+    name = 'Zol'
+    allowed_domains = ['zol.com.cn']
+    start_urls = ['http://zol.com.cn/']
+
+    def parse(self, response):
+        pass

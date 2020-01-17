@@ -1,0 +1,145 @@
+import scrapy
+import re
+from scrapyWeb.items import ScrapywebItem
+ 
+
+
+
+class Jia400Spider(scrapy.Spider):
+    name = "Jia400"
+
+    start_urls = []
+
+    def __init__(self):
+        self.start_urls = [
+            "https://www.jia400.com/news/lists-74-0.html",
+            #"https://www.jia400.com/news/lists-74-1.html",
+           # "https://www.jia400.com/news/lists-74-0-2.html",
+           # "https://www.jia400.com/news/lists-74-0-3.html",
+           # "https://www.jia400.com/news/lists-74-0-4.html",
+           # "https://www.jia400.com/news/lists-74-0-5.html",
+           # "https://www.jia400.com/news/lists-74-0-6.html",
+        ]
+
+
+    def parse(self, response):
+        url = response.xpath('//div[@class="news-lists"]/div[@class="con"]/dl[@class="item"]/dt[@class="left"]/a/@href').extract()
+        cover = response.xpath('//div[@class="news-lists"]/div[@class="con"]/dl[@class="item"]/dt[@class="left"]/a/img/@data-original').extract()
+
+        for index in range(len(url)):
+            #if(index == 1):
+            yield scrapy.Request(url[index], meta={'cover': cover[index]}, callback=self.parse_detail)
+
+        nextLink = []
+        nextLink = response.xpath('//div[@class="left"]/a/@href').extract()
+        
+        if nextLink:
+            nextLink = nextLink[0]
+            nextpage= nextLink.split('./')[1]
+            yield Request("https://www.jia400.com/news/lists-74-0-" + nextpage + '.html',callback=self.parse)
+
+
+    def parse_detail(self, response):
+        item = ScrapywebItem()
+        item['title'] = response.xpath('//div[@class="title"]/h1/text()').extract()[0]
+        item['summary'] = response.xpath('//div[@class="guide"]/text()').extract()[0]
+
+        content = ''
+
+        for con in response.xpath('//div[@class="news_content_txt"]/p').extract():
+            content = content + con
+
+        item['content'] = content
+        
+     
+        item['pubtime'] = response.xpath('//span[@class="time"]/text()').extract()[0]
+        imageurl = []
+
+        for img in response.xpath('//div[@class="news_content_txt"]/p/img/@original').extract():
+            imageurl.append(img)
+
+
+        item['imageUrl'] = imageurl
+        item['cover'] = response.meta['cover'];
+        item['url'] = response.url
+
+        yield item
+
+
+ 
+
+"""
+
+class QuotesSpider(scrapy.Spider):
+    name = "Quotes"
+    allowed_domains = ['chinabm.cn']
+
+
+    def __init__(self):
+        self.start_urls = [
+            "https://menchuang.chinabm.cn/news/hangye/1/",
+            "https://menchuang.chinabm.cn/news/hangye/2/",
+            "https://yigui.chinabm.cn/news/hangye/1/",
+            "https://yigui.chinabm.cn/news/hangye/2/",
+            "https://zhinengsuo.chinabm.cn/news/hangye/1/",
+            "https://zhinengsuo.chinabm.cn/news/hangye/2/",
+            "https://clby.chinabm.cn/news/hangye/1/",
+            "https://clby.chinabm.cn/news/hangye/2/",
+            "https://chugui.chinabm.cn/news/hangye/1/",
+            "https://chugui.chinabm.cn/news/hangye/2/",
+        ]
+
+
+    def parse(self, response):
+        url = response.xpath('//div[@class="news_tlist"]/dl/dd/h3/a/@href').extract()
+        cover = response.xpath('//div[@class="news_tlist"]/dl/dt/a/img/@original').extract()
+
+        #for url in response.xpath('//div[@class="news_tlist"]/dl/dd/h3/a/@href').extract():
+            #yield scrapy.Request(url, callback=self.parse_detail)
+
+        for index in range(len(url)):
+            #if(index == 0):
+            yield scrapy.Request(url[index], meta={'cover': cover[index]}, callback=self.parse_detail)
+
+
+       # nextLink = []
+       # nextLink = response.xpath('//div[@class="pagediv"]/div[@class="pagebox m_page cl"]/a/@href').extract()
+
+
+       # if nextLink:
+           # nextLink = nextLink[0]
+          #  nextpage= nextLink.split('./')[1]
+          #  yield Request("https://jcz.chinabm.cn/news/hangye/" + nextpage + '/',callback=self.parse)
+
+
+    def parse_detail(self, response):
+        item = TutorialItem()
+        item['title'] = response.xpath('//div[@class="g-main-855 fl"]/div[@class="m-news-hd"]/h2/text()').extract()[0]
+        item['summary'] = response.xpath('//div[@class="g-main-855 fl"]/div[@class="m-news-bd js-anchor-newsnav"]/div[@class="m-news-box"]/div[@class="m-news-content"]/p/text()').extract()[0]
+        content = ''
+
+
+        a_rs = re.compile(r"<a[^>]*>|<\/a>", re.S)
+   
+        for con in response.xpath('//div[@class="g-main-855 fl"]/div[@class="m-news-bd js-anchor-newsnav"]/div[@class="m-news-box"]/div[@class="m-news-content"]/p').extract():
+            con = a_rs.sub('',con)#去掉内容的a标签
+            content = content + con
+
+
+        item['content'] =  content
+        item['pubtime'] = response.xpath('//div[@class="infos"]/span/text()').extract()[0]
+        
+        imageurl = []
+        for img in response.xpath('//div[@class="m-news-content"]/p/img/@original').extract():
+            imageurl.append(img)
+
+
+        item['imageUrl'] = imageurl
+        item['cover'] = response.meta['cover']
+        item['url'] = response.url
+
+
+        yield item
+
+
+"""
